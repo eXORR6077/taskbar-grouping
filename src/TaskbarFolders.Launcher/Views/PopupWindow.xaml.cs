@@ -172,16 +172,24 @@ public partial class PopupWindow : Window
         }
 
         // Force Visible for this measure pass — the binding may not have flipped yet.
+        // A local DP value outranks the binding, so ClearValue in finally or the strip
+        // stays Visible after LastError is cleared (height shrinks, UI still shows it).
         ErrorStrip.Visibility = Visibility.Visible;
+        try
+        {
+            // Available width is the content area inside ChromeRoot padding; infinity height
+            // lets wrapped error text size itself accurately instead of a fragile constant.
+            var availableWidth = Math.Max(Width - (2 * PaddingPx), 0);
+            ErrorStrip.Measure(new Size(availableWidth, double.PositiveInfinity));
 
-        // Available width is the content area inside ChromeRoot padding; infinity height
-        // lets wrapped error text size itself accurately instead of a fragile constant.
-        var availableWidth = Math.Max(Width - (2 * PaddingPx), 0);
-        ErrorStrip.Measure(new Size(availableWidth, double.PositiveInfinity));
-
-        // DesiredSize excludes Margin; the DockPanel still reserves Margin.Top (8 DIP).
-        var margin = ErrorStrip.Margin;
-        return ErrorStrip.DesiredSize.Height + margin.Top + margin.Bottom;
+            // DesiredSize excludes Margin; the DockPanel still reserves Margin.Top (8 DIP).
+            var margin = ErrorStrip.Margin;
+            return ErrorStrip.DesiredSize.Height + margin.Top + margin.Bottom;
+        }
+        finally
+        {
+            ErrorStrip.ClearValue(UIElement.VisibilityProperty);
+        }
     }
 
     /// <summary>
