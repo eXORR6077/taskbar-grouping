@@ -117,7 +117,7 @@ The taskbar starts the launcher. Startup order matters and is deliberate:
 
 Names appear immediately; icons stream in afterwards on the thread pool. Each `BitmapSource` is frozen inside the producer before the continuation crosses back to the UI thread — an unfrozen bitmap carries the wrong dispatcher affinity and the WPF binding throws.
 
-The popup closes on focus loss, after a successful launch, or via a three-second fallback if Windows never granted it activation. A *failed* launch keeps it open and shows an inline error strip.
+The popup closes on focus loss, after a successful launch, or via a three-second fallback if Windows never granted it activation. A *failed* launch keeps it open and shows an inline error strip. Window height is computed from the tile grid alone at open; when `LastError` appears or clears, height is recomputed to include the measured strip (still clamped to `MaxHeight`) and placement is refreshed so the popup does not overlap the taskbar.
 
 ### Launcher exit codes
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -63,6 +64,9 @@ public partial class PopupWindow : Window
         DataContext = viewModel;
 
         _viewModel.LaunchSucceeded += OnLaunchSucceeded;
+        // LastError toggles the docked strip after open; height must grow/shrink with it
+        // or the strip clips the fixed 96 px tiles (issue #24).
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Activated += OnActivated;
         Closed += OnClosed;
         SourceInitialized += OnSourceInitialized;
@@ -70,32 +74,7 @@ public partial class PopupWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        // Compute explicit Width + Height from the bound grid metrics — skips the SizeToContent
-        // measure pass that pre-v0.4 added ~5-10 ms before placement could be computed. Empty
-        // / unavailable groups fall back to MinHeight, keeping the banner-only layout centred.
-        var cols = Math.Max(_viewModel.Columns, 1);
-        var rows = (_viewModel.Apps.Count + cols - 1) / cols;
-        Width = Math.Clamp(cols * TilePx + 2 * PaddingPx, MinWidth, MaxWidth);
-        Height = Math.Clamp(Math.Max(rows, 1) * TilePx + 2 * PaddingPx, MinHeight, MaxHeight);
-
-        // Measure pass for hit-test rect correctness on the now-explicit size.
-        UpdateLayout();
-
-        var placement = _positionHelper.ComputePlacement(new Size(Width, Height), _settings.PopupPosition);
-        Left = placement.Left;
-        Top = placement.Top;
-
-        // Set the ScaleTransform pivot to bottom-centre so the open animation grows the popup
-        // up out of the clicked tile (which sits directly below the popup centre per
-        // TaskbarPositionHelper). XAML keeps CenterX/Y=0 as placeholders; they MUST be set
-        // before the storyboard fires. The transform lives on ChromeRoot, not the Window —
-        // Window.CoerceRenderTransform rejects non-identity transforms outright.
-        if (FindName("ChromeRoot") is Border pivotChrome
-            && pivotChrome.RenderTransform is ScaleTransform scale)
-        {
-            scale.CenterX = Width / 2.0;
-            scale.CenterY = Height;
-        }
+        ApplySizeAndPlacement();
 
         if (_settings.EnableAnimations && TryFindResource("OpenAnimation") is Storyboard storyboard)
         {
@@ -131,6 +110,94 @@ public partial class PopupWindow : Window
             Close();
         };
         _activationFallbackTimer.Start();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(PopupViewModel.LastError))
+        {
+            return;
+        }
+
+        // Resize only — do not re-run the open animation after the window is already shown.
+        ApplySizeAndPlacement();
+    }
+
+    /// <summary>
+    /// Sets Width/Height from the grid plus any visible error strip, then recomputes
+    /// taskbar-aware placement and the scale-transform pivot.
+    /// </summary>
+    private void ApplySizeAndPlacement()
+    {
+        // Explicit Width + Height skip the SizeToContent measure pass that pre-v0.4 added
+        // ~5-10 ms before placement could be computed. Empty / unavailable groups fall
+        // back to MinHeight, keeping the banner-only layout centred.
+        var cols = Math.Max(_viewModel.Columns, 1);
+        var rows = (_viewModel.Apps.Count + cols - 1) / cols;
+        Width = Math.Clamp(cols * TilePx + 2 * PaddingPx, MinWidth, MaxWidth);
+
+        // Binding must apply Visibility before Measure; without this pass a freshly set
+        // LastError still looks Collapsed and strip height stays 0.
+        UpdateLayout();
+
+        var stripHeight = MeasureErrorStripHeight();
+        Height = PopupHeightCalculator.CalculatePopupHeight(
+            rows,
+            TilePx,
+            PaddingPx,
+            stripHeight,
+            new PopupHeightBounds(MinHeight, MaxHeight));
+
+        // Second pass so hit-test / DesiredSize match the new explicit size before placement.
+        UpdateLayout();
+
+        var placement = _positionHelper.ComputePlacement(new Size(Width, Height), _settings.PopupPosition);
+        Left = placement.Left;
+        Top = placement.Top;
+
+        UpdateScalePivot();
+    }
+
+    /// <summary>
+    /// Measured height of the launch-failure strip including its layout margin.
+    /// Missing / empty <see cref="PopupViewModel.LastError"/> contributes 0 so open
+    /// sizing stays grid-only. Uses LastError (not Visibility) as the gate because this
+    /// handler can run on the same PropertyChanged tick before the binding applies.
+    /// </summary>
+    private double MeasureErrorStripHeight()
+    {
+        if (ErrorStrip is null || string.IsNullOrEmpty(_viewModel.LastError))
+        {
+            return 0;
+        }
+
+        // Force Visible for this measure pass — the binding may not have flipped yet.
+        ErrorStrip.Visibility = Visibility.Visible;
+
+        // Available width is the content area inside ChromeRoot padding; infinity height
+        // lets wrapped error text size itself accurately instead of a fragile constant.
+        var availableWidth = Math.Max(Width - (2 * PaddingPx), 0);
+        ErrorStrip.Measure(new Size(availableWidth, double.PositiveInfinity));
+
+        // DesiredSize excludes Margin; the DockPanel still reserves Margin.Top (8 DIP).
+        var margin = ErrorStrip.Margin;
+        return ErrorStrip.DesiredSize.Height + margin.Top + margin.Bottom;
+    }
+
+    /// <summary>
+    /// Sets the ScaleTransform pivot to bottom-centre so the open animation grows the
+    /// popup up out of the clicked tile. Must also run after a strip-driven resize so
+    /// CenterY tracks the new Height. Transform lives on ChromeRoot, not the Window —
+    /// Window.CoerceRenderTransform rejects non-identity transforms outright.
+    /// </summary>
+    private void UpdateScalePivot()
+    {
+        if (FindName("ChromeRoot") is Border pivotChrome
+            && pivotChrome.RenderTransform is ScaleTransform scale)
+        {
+            scale.CenterX = Width / 2.0;
+            scale.CenterY = Height;
+        }
     }
 
     private void OnActivated(object? sender, EventArgs e)
@@ -234,6 +301,7 @@ public partial class PopupWindow : Window
         _activationFallbackTimer?.Stop();
         _activationFallbackTimer = null;
         _viewModel.LaunchSucceeded -= OnLaunchSucceeded;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         Activated -= OnActivated;
         Closed -= OnClosed;
         SourceInitialized -= OnSourceInitialized;

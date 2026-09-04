@@ -112,7 +112,10 @@
 
             <!-- App grid + transient launch-failure banner -->
             <DockPanel Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherInverseBoolToVisibilityConverter.Instance}}">
-                <Border DockPanel.Dock="Bottom"
+                <!-- x:Name so code-behind can Measure the strip when LastError appears;
+                     a constant would drift if padding/wrapping change. -->
+                <Border x:Name="ErrorStrip"
+                        DockPanel.Dock="Bottom"
                         Margin="0,8,0,0"
                         Padding="10,6"
                         CornerRadius="6"
