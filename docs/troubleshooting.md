@@ -101,6 +101,7 @@ On an affected build, avoid clicking Save unless you intend to set every value i
 Current, deliberate or not-yet-implemented — not bugs to report:
 
 - **The popup has no keyboard support.** No Escape to dismiss, no focused item on open.
+- **A group with more apps than the popup can show loses the rest.** The popup stops at 800 DIP, which is eight rows — 24 apps at the default three columns — and the grid does not scroll. Anything past that is off-screen with nothing indicating it exists; a visible launch-failure strip costs a further row.
 - **The popup's label colour follows your Windows app theme, not your wallpaper.** Since v0.4.7 the labels carry a halo in the opposite tone, so they stay legible either way, but on a wallpaper of the same brightness as the text they read as outlined rather than crisp.
 - **No renaming, reordering, custom icons, or launch arguments** from the interface. `arguments` and the per-group `columns` value (1–6, default 3) exist in the JSON only; a per-group `theme` field is serialised but ignored.
 - **Deleting a group does not unpin its tile.** Unpin it yourself.
