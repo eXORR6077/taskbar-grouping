@@ -124,8 +124,8 @@ public partial class PopupWindow : Window
     }
 
     /// <summary>
-    /// Sets Width/Height from the grid plus any visible error strip, then recomputes
-    /// taskbar-aware placement and the scale-transform pivot.
+    /// Sets Width from the column count and Height from what the chrome actually wants,
+    /// then recomputes taskbar-aware placement and the scale-transform pivot.
     /// </summary>
     private void ApplySizeAndPlacement()
     {
@@ -133,20 +133,35 @@ public partial class PopupWindow : Window
         // ~5-10 ms before placement could be computed. Empty / unavailable groups fall
         // back to MinHeight, keeping the banner-only layout centred.
         var cols = Math.Max(_viewModel.Columns, 1);
-        var rows = (_viewModel.Apps.Count + cols - 1) / cols;
         Width = Math.Clamp(cols * TilePx + 2 * PaddingPx, MinWidth, MaxWidth);
 
-        // Binding must apply Visibility before Measure; without this pass a freshly set
-        // LastError still looks Collapsed and strip height stays 0.
-        UpdateLayout();
+        // Height comes from measuring ChromeRoot rather than adding up tile rows, because
+        // the error strip docks Bottom in a fill-last DockPanel: at a grid-only height it
+        // takes its space out of the fixed 96 px tiles and clips the last row (issue #24).
+        // ChromeRoot's DesiredSize already carries the grid, its padding and whatever the
+        // LastError binding has currently made of the strip, so nothing here needs to know
+        // the strip exists.
+        //
+        // Measuring the strip on its own instead would mean writing Visibility to force it
+        // visible for the measure pass — and a local value on a OneWay-bound property
+        // discards the binding for good. ClearValue then removes only the local value, not
+        // the expression, and Visibility falls back to its default, which is Visible. The
+        // strip would survive as an empty red bar and clip the tiles again on the next
+        // click, when LaunchApp clears LastError.
+        //
+        // UpdateTarget rather than an assignment: this runs from LastError's PropertyChanged,
+        // and the strip's own binding is not guaranteed to have been notified first, so the
+        // measure below could otherwise see the previous visibility. Pushing the source value
+        // through the existing expression is deterministic and leaves the binding in place.
+        ErrorStrip.GetBindingExpression(VisibilityProperty)?.UpdateTarget();
 
-        var stripHeight = MeasureErrorStripHeight();
-        Height = PopupHeightCalculator.CalculatePopupHeight(
-            rows,
-            TilePx,
-            PaddingPx,
-            stripHeight,
-            new PopupHeightBounds(MinHeight, MaxHeight));
+        // Measure short-circuits when the element is measure-valid and the constraint is
+        // unchanged, which is exactly the case on a repeat pass — invalidate so DesiredSize
+        // reflects the strip's current state rather than the previous one.
+        UpdateLayout();
+        ChromeRoot.InvalidateMeasure();
+        ChromeRoot.Measure(new Size(Width, double.PositiveInfinity));
+        Height = Math.Clamp(ChromeRoot.DesiredSize.Height, MinHeight, MaxHeight);
 
         // Second pass so hit-test / DesiredSize match the new explicit size before placement.
         UpdateLayout();
@@ -159,40 +174,6 @@ public partial class PopupWindow : Window
     }
 
     /// <summary>
-    /// Measured height of the launch-failure strip including its layout margin.
-    /// Missing / empty <see cref="PopupViewModel.LastError"/> contributes 0 so open
-    /// sizing stays grid-only. Uses LastError (not Visibility) as the gate because this
-    /// handler can run on the same PropertyChanged tick before the binding applies.
-    /// </summary>
-    private double MeasureErrorStripHeight()
-    {
-        if (ErrorStrip is null || string.IsNullOrEmpty(_viewModel.LastError))
-        {
-            return 0;
-        }
-
-        // Force Visible for this measure pass — the binding may not have flipped yet.
-        // A local DP value outranks the binding, so ClearValue in finally or the strip
-        // stays Visible after LastError is cleared (height shrinks, UI still shows it).
-        ErrorStrip.Visibility = Visibility.Visible;
-        try
-        {
-            // Available width is the content area inside ChromeRoot padding; infinity height
-            // lets wrapped error text size itself accurately instead of a fragile constant.
-            var availableWidth = Math.Max(Width - (2 * PaddingPx), 0);
-            ErrorStrip.Measure(new Size(availableWidth, double.PositiveInfinity));
-
-            // DesiredSize excludes Margin; the DockPanel still reserves Margin.Top (8 DIP).
-            var margin = ErrorStrip.Margin;
-            return ErrorStrip.DesiredSize.Height + margin.Top + margin.Bottom;
-        }
-        finally
-        {
-            ErrorStrip.ClearValue(UIElement.VisibilityProperty);
-        }
-    }
-
-    /// <summary>
     /// Sets the ScaleTransform pivot to bottom-centre so the open animation grows the
     /// popup up out of the clicked tile. Must also run after a strip-driven resize so
     /// CenterY tracks the new Height. Transform lives on ChromeRoot, not the Window —
@@ -200,8 +181,7 @@ public partial class PopupWindow : Window
     /// </summary>
     private void UpdateScalePivot()
     {
-        if (FindName("ChromeRoot") is Border pivotChrome
-            && pivotChrome.RenderTransform is ScaleTransform scale)
+        if (ChromeRoot.RenderTransform is ScaleTransform scale)
         {
             scale.CenterX = Width / 2.0;
             scale.CenterY = Height;

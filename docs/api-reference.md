@@ -1,4 +1,4 @@
-# API Reference
+﻿# API Reference
 
 A map of the public surface, organised by project. It is a guide to what exists and what each abstraction is for — the XML documentation on the types themselves is the authority on individual parameters.
 
@@ -235,7 +235,6 @@ Task<PinResult> PinAsync(string groupId, CancellationToken cancellationToken = d
 | [`ITaskbarPositionHelper`](../src/TaskbarFolders.Launcher/Services/ITaskbarPositionHelper.cs) | `ComputePlacement(Size popupSize, PopupPositionPreference)` returning a `PopupPlacement(double Left, double Top)` in DIPs |
 | [`TaskbarEdge`](../src/TaskbarFolders.Launcher/Services/TaskbarEdge.cs) | `Left`, `Top`, `Right`, `Bottom` |
 | [`IProcessLauncher`](../src/TaskbarFolders.Launcher/Services/IProcessLauncher.cs) | `bool Launch(string path, string? arguments)` |
-| [`PopupHeightCalculator`](../src/TaskbarFolders.Launcher/Views/PopupHeightCalculator.cs) | Pure `CalculatePopupHeight(rows, tilePx, paddingPx, stripHeight, bounds)` for strip-aware popup sizing |
 | `TaskbarPinRunner` | Drives the WinRT pin request in pin mode and maps the outcome to an exit code |
 | `StartupFailureLogger` | Dependency-free, never-throwing logger for failure paths that occur before or instead of the DI graph |
 

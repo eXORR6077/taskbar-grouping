@@ -133,7 +133,7 @@ If you are unsure whether a document is affected, open it and read the section y
 
 xUnit with Moq and FluentAssertions. FluentAssertions is pinned below 8 — that release changed to a commercial licence.
 
-- Tests run headless. Nothing creates a WPF `Application` or needs an STA thread; view models are exercised directly.
+- Almost everything runs headless: no WPF `Application`, view models exercised directly. The exceptions are deliberate and marked as such in their class remarks — `ControlStyleTests` realises control templates, and `PopupWindowSizingTests` shows the popup off-screen because an `ItemsControl` only builds its tiles inside a real layout pass. Both marshal onto a short-lived STA thread. Reach for that only when the behaviour under test *is* WPF's, and say why in the file; a window that is shown must set `ShowActivated = false`, or the window manager's `Deactivated` races the teardown and takes the test host down with it.
 - If you change the dependency injection graph, extend `CompositionRootTests`.
 - Line coverage currently sits at **69.2 %**, and CI **fails below 65 %**. The floor is deliberately under the current figure so coverage can only ratchet upwards; raise it when the real number does. It also fails on 0 %, because a broken collector reads exactly like an untested code base — which is what happened until v0.4.10, when `DebugType=none` in Release left coverlet with no debug information and every report came out empty.
 - Avoid fixed sleeps. Poll with a generous deadline and exit early — slow CI runners have already broken timing-sensitive tests once.
