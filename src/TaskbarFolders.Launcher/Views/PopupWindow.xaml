@@ -112,7 +112,14 @@
 
             <!-- App grid + transient launch-failure banner -->
             <DockPanel Visibility="{Binding IsUnavailable, Converter={x:Static vm:LauncherInverseBoolToVisibilityConverter.Instance}}">
-                <Border DockPanel.Dock="Bottom"
+                <!-- Docks Bottom in a fill-last DockPanel, so at a grid-only window height it
+                     takes its space out of the fixed 96 px tiles. PopupWindow sizes the window
+                     from ChromeRoot's DesiredSize instead, which already accounts for it.
+                     Visibility must stay a plain binding and must never be written from code:
+                     a local value discards a OneWay binding permanently, and the property then
+                     defaults back to Visible. x:Name is what the regression test binds to. -->
+                <Border x:Name="ErrorStrip"
+                        DockPanel.Dock="Bottom"
                         Margin="0,8,0,0"
                         Padding="10,6"
                         CornerRadius="6"

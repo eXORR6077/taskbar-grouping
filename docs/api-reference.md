@@ -1,4 +1,4 @@
-# API Reference
+﻿# API Reference
 
 A map of the public surface, organised by project. It is a guide to what exists and what each abstraction is for — the XML documentation on the types themselves is the authority on individual parameters.
 

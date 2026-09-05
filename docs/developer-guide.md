@@ -84,7 +84,11 @@ dotnet test TaskbarFolders.sln -c Release --collect:"XPlat Code Coverage"
 
 Roughly 330 test cases across the three projects, using xUnit with Moq and FluentAssertions. FluentAssertions is pinned below version 8 — that release changed to a commercial licence, and Dependabot is configured to ignore it.
 
-Tests run headless: none of them create a WPF `Application` or need an STA thread, so view models are exercised directly. A handful do touch the real shell — icon extraction from `notepad.exe` and `cmd.exe`, and COM shortcut creation into a temp directory — so they need a real Windows install rather than a stripped container.
+Most tests run headless: no WPF `Application`, view models exercised directly. A handful do touch the real shell — icon extraction from `notepad.exe` and `cmd.exe`, and COM shortcut creation into a temp directory — so they need a real Windows install rather than a stripped container.
+
+Two classes go further and drive WPF itself, because what they cover *is* WPF behaviour rather than arithmetic. `ControlStyleTests` realises control templates so a malformed one fails the build instead of the Settings dialog. `PopupWindowSizingTests` constructs the real popup and shows it off-screen: an `ItemsControl` only builds its containers inside a live layout pass, and `UpdateLayout` on a window with no `PresentationSource` does nothing, so there is no headless way to measure the tile grid. Both marshal their body onto a short-lived STA thread via a local `OnStaThread` helper, since xUnit runs MTA.
+
+If you add another of these, set `ShowActivated = false` before `Show()`. An activated popup receives a `Deactivated` from the window manager while the test tears it down, `PopupWindow.OnDeactivated` calls `Close()` on a window that is already closing, and the resulting exception escapes a `WndProc` and crashes the entire test host rather than failing one test.
 
 Some tests are timing-sensitive (cache pruning, log rotation, debounced preview refresh) and have already been hardened once against slow CI runners. If you add one, poll with a generous deadline and exit early on success rather than sleeping a fixed interval.
 

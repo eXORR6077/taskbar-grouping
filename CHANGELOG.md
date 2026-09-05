@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Popup height grows with the launch-failure strip.** When a launch failed, the red error strip docked to the bottom of the popup without changing `Window.Height`, so it stole space from the fixed 96 px tiles and clipped the bottom row. Height now comes from measuring the popup chrome, clamped to `MinHeight`/`MaxHeight`, and placement is refreshed so the taller popup still clears the taskbar.
+
 ### Internal
 
 - The XML documentation rule is enforced rather than asserted. `.editorconfig` set `CS1591` to `warning`, but no project generated a documentation file, so the compiler never emitted the diagnostic and two documents claimed an enforcement that did not exist. `Directory.Build.props` now generates one for the `src` projects; the three test projects switch it off, where xUnit's public classes would demand hundreds of comments that document nothing. No documentation had to be written — all 349 publicly visible declarations in `src` already had it. Proven both ways: an undocumented public member fails the build, and removing a test project's opt-out produces 268 errors.
