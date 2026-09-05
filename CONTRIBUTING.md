@@ -87,6 +87,8 @@ Write the body for someone who already has the diff. Explain **why** the change 
 
 Group related work into one commit per behavioural concern rather than one commit per file, so a later `git bisect` lands on something meaningful.
 
+`Co-authored-by` is for people who worked on the change with you, and it is welcome for that — credit them. It is not for tools. An editor, an assistant or a generator is not a co-author, and it does not belong in the message body either. A commit log answers "who do I ask about this", and a name that cannot answer makes it worse than no name at all.
+
 ## Pull requests
 
 1. Fill in the template.

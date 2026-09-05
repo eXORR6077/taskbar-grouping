@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Internal
 
+- `CONTRIBUTING.md` now says which commit trailers are unwanted, which it never did — the rule lived only in the internal notes, where a contributor could not be expected to find it, and was worded broadly enough to read as a ban on crediting human co-authors. It is not: tools are not co-authors, people are.
 - The popup's effective ceiling — eight rows, 24 apps at three columns, and no scrolling past it — is recorded as a known limitation and tracked as an issue, rather than left for a user to discover by losing tiles.
 
 ## [0.4.10] - 2026-09-03
