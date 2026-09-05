@@ -7,6 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Test classes and their [Fact] methods are public by xUnit's design;
+         documenting each one would add noise, not information. Set here rather than
+         conditioned in Directory.Build.props, which is imported before this file and
+         so cannot see IsTestProject. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <RootNamespace>TaskbarFolders.Launcher.Tests</RootNamespace>
   </PropertyGroup>
 

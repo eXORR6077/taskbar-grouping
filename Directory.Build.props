@@ -6,6 +6,13 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- Without this the compiler never emits CS1591 at all, so the
+         dotnet_diagnostic.CS1591.severity setting in .editorconfig had nothing to
+         elevate and the documented "XML docs on every public member" rule was
+         enforced by nobody. On by default so a new src project is covered without
+         anyone remembering; the test projects opt out, where xUnit's public test
+         classes would otherwise demand 300+ comments that document nothing. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>0.4.10</Version>
     <Authors>Gian Luca Schwekendiek</Authors>
     <Product>TaskbarFolders</Product>

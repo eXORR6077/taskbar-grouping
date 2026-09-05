@@ -28,7 +28,7 @@ Four-project solution. Dependencies flow Manager/Launcher → Core → Shared.
 - **Strict MVVM** — no business logic in code-behind. Commands via `[RelayCommand]` (CommunityToolkit.Mvvm 8.3.2).
 - **DI everywhere** — register in `*ServiceCollectionExtensions`, inject via constructor. `CompositionRootTests` validates the Manager graph at build.
 - **File-scoped namespaces**, `_camelCase` private fields, PascalCase for `const` fields.
-- **XML doc comments required** on public members (analyzer-enforced).
+- **XML doc comments required** on public members. Enforced: `GenerateDocumentationFile` is on for `src` (off for `tests`), so `CS1591` is actually emitted, and `TreatWarningsAsErrors` makes it fail the build. Until that property was set the rule was documented but inert.
 - **Async I/O** — all persistence and shell calls async, except `IIconCache.TryGet/Set` (sync on purpose; UI hot path).
 
 ## Non-Obvious Patterns
@@ -71,7 +71,7 @@ Project-wide `EnforceCodeStyleInBuild=true` + `TreatWarningsAsErrors=true`. Supp
 - `CA1716` global — `TaskbarFolders.Shared` namespace clashes with a VB.NET reserved word (irrelevant for Windows-only C# app).
 - `CA1848` / `CA1873` global — `LoggerMessage` source generators not used; cold-path logging only. Hot paths can opt in.
 - `CA1707` / `CA1859` / `CA1861` `tests/**` only — xUnit naming convention + perf rules don't apply to test code.
-- `IDE1006` const-field rule — separate `required_modifiers=const` naming rule allows `PascalCase` const fields alongside `_camelCase` private fields.
+- `IDE1006` is **not** suppressed — a separate `required_modifiers=const` naming rule allows `PascalCase` const fields alongside `_camelCase` private fields, so both satisfy the rule rather than one being exempted from it.
 
 If you suppress an analyzer, add the rationale in `.editorconfig` next to the suppression.
 

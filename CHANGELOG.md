@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Internal
 
+- The XML documentation rule is enforced rather than asserted. `.editorconfig` set `CS1591` to `warning`, but no project generated a documentation file, so the compiler never emitted the diagnostic and two documents claimed an enforcement that did not exist. `Directory.Build.props` now generates one for the `src` projects; the three test projects switch it off, where xUnit's public classes would demand hundreds of comments that document nothing. No documentation had to be written — all 349 publicly visible declarations in `src` already had it. Proven both ways: an undocumented public member fails the build, and removing a test project's opt-out produces 268 errors.
 - `CONTRIBUTING.md` now says which commit trailers are unwanted, which it never did — the rule lived only in the internal notes, where a contributor could not be expected to find it, and was worded broadly enough to read as a ban on crediting human co-authors. It is not: tools are not co-authors, people are.
 - The popup's effective ceiling — eight rows, 24 apps at three columns, and no scrolling past it — is recorded as a known limitation and tracked as an issue, rather than left for a user to discover by losing tiles.
 

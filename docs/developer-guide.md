@@ -110,12 +110,12 @@ Conventions:
 
 - File-scoped namespaces.
 - `_camelCase` for private fields; `PascalCase` for constants — a dedicated naming rule keeps both valid side by side.
-- XML documentation on every public member. `CS1591` is an error.
+- XML documentation on every public member. `CS1591` is an error — `Directory.Build.props` generates a documentation file for the `src` projects, which is what makes the compiler emit the diagnostic at all, and `TreatWarningsAsErrors` does the rest. The test projects switch the documentation file back off: xUnit's classes and `[Fact]` methods are public by design, and commenting each one would add noise rather than information.
 - Strict MVVM. No business logic in code-behind; commands via `[RelayCommand]`.
 - Constructor injection everywhere; register services in the project's `*ServiceCollectionExtensions`. `CompositionRootTests` validates that the graph resolves.
 - Async I/O throughout, with one deliberate exception: `IIconCache.TryGet`/`Set` are synchronous because they sit on the popup's hot path.
 
-Four analyzer rules are suppressed, each with its rationale next to the suppression in `.editorconfig`: `CA1716` globally (namespace name versus a VB.NET keyword), `CA1848`/`CA1873` globally (no `LoggerMessage` source generators; cold-path logging only — opt back in locally for a hot path), and `CA1707`/`CA1859`/`CA1861` under `tests/**` only. If you add a suppression, add the reason beside it.
+Six analyzer rules are suppressed, each with its rationale next to the suppression in `.editorconfig`: `CA1716` globally (namespace name versus a VB.NET keyword), `CA1848`/`CA1873` globally (no `LoggerMessage` source generators; cold-path logging only — opt back in locally for a hot path), and `CA1707`/`CA1859`/`CA1861` under `tests/**` only. If you add a suppression, add the reason beside it.
 
 ## Invariants worth knowing before you touch things
 

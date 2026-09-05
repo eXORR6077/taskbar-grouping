@@ -74,7 +74,9 @@ dotnet_naming_symbols.constants.required_modifiers = const
 
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
-# XML documentation
+# XML documentation. This severity does nothing on its own: the compiler only emits
+# CS1591 when a documentation file is generated, which Directory.Build.props turns on
+# for src projects and the test projects turn back off.
 dotnet_diagnostic.CS1591.severity = warning
 
 # CA1716: "Shared" namespace clashes with a VB.NET reserved keyword.
